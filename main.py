@@ -44,18 +44,12 @@ def process(minx):
                     if x != image_array.shape[1]-1 and maximum < round(image_array[x][y+1]/256):
                         maximum = round(image_array[x][y+1]/256)
                     print(maximum)
-                    #Draw in from the sides
-                    if x != 0 and image_array[x-1][y] == maximum or True:
-                        print("Here")
-                        for i in range(16):
-                            for j in range(16):
-                                array_slice[(x-minx)*16+i][16 * y + j] = 1
-                    if x != image_array.shape[0]-1 and image_array[x+1][y] == maximum:
-                        for i in range(intensity):
-                            for j in range(16):
-                                array_slice[(x-minx)*16+16-i][16 * y + j] = 1
+                    if x != 0 and maximum == round(image_array[x-1][y]/256):
+                        for i in range(-int(intensity), int(intensity) + 1):
+                            for j in range(-16, 17):
+                                array_slice[(x - minx) * 16 + i][16 * y + j] = 1
         except Exception as e:
-            raise e
+            print(e)
     
     return minx, array_slice
 
