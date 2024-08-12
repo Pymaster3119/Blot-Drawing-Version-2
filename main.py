@@ -6,12 +6,16 @@ import math
 import tqdm
 from multiprocessing import Pool
 import time
+import traceback
+from tqdm.contrib.concurrent import process_map
 
 def process(minx):
-    useCircles = False
-    image = Image.open('image2.png').convert("L")
+    with open("imagename", "r") as txt:
+        image = Image.open(txt.read()).convert("L")
     image_array = np.array(image)
     maxx = minx + 16
+    with open("adaptive", "r") as txt:
+        use_circles = txt.read()=="t"
     if maxx < image_array.shape[0]:
         array_slice = np.zeros((256, image_array.shape[1] * 16))
     else:
@@ -22,7 +26,7 @@ def process(minx):
             for y in range(image_array.shape[1] + 1):
                 # Get intensity
                 intensity = image_array[x][y] / 16.0
-                if useCircles:
+                if use_circles:
                     radius = int(intensity)
                     # Draw circle with appropriate radius
                     for i in range(16):
@@ -35,48 +39,55 @@ def process(minx):
                 else:
                     #Find the maximum value
                     maximum = 0
-                    if x != 0 and maximum < round(image_array[x-1][y]/256):
-                        maximum = round(image_array[x-1][y]/256)
-                    if x != image_array.shape[0]-1 and maximum < round(image_array[x+1][y]/256):
-                        maximum = round(image_array[x+1][y]/256)
-                    if y != 0 and maximum < round(image_array[x][y-1]/256):
-                        maximum = round(image_array[x][y-1]/256)
-                    if y != image_array.shape[1]-1 and maximum < round(image_array[x][y+1]/256):
-                        maximum = round(image_array[x][y+1]/256)
-                    print("Here")
+                    if x != 0 and maximum < math.ceil(image_array[x-1][y]/256):
+                        maximum = math.ceil(image_array[x-1][y]/256)
+                    if x != image_array.shape[0]-1 and maximum < math.ceil(image_array[x+1][y]/256):
+                        maximum = math.ceil(image_array[x+1][y]/256)
+                    if y != 0 and maximum < math.ceil(image_array[x][y-1]/256):
+                        maximum = math.ceil(image_array[x][y-1]/256)
+                    if y != image_array.shape[1]-1 and maximum < math.ceil(image_array[x][y+1]/256):
+                        maximum = math.ceil(image_array[x][y+1]/256)
+
                     # Check above
-                    print(image_array)
-                    print(array_slice.shape)
-                    print(round(image_array[x-1][y]/256))
-                    if x != 0 and maximum == round(image_array[x-1][y]/256):
+                    if x != 0 and maximum == math.ceil(image_array[x-1][y]/256):
                         for i in range(int(intensity)):
-                            for j in range(16):
-                                new_x = (x - minx) * 16 + i
-                                new_y = 16 * y + j
-                                array_slice[new_x][new_y] = 1
+                            try:
+                                for j in range(16):
+                                    new_x = (x - minx) * 16 + i
+                                    new_y = 16 * y + j
+                                    array_slice[new_x][new_y] = 1
+                            except:
+                                pass
                     
                     # Check below
-                    if x != image_array.shape[0]-1 and maximum == round(image_array[x+1][y]/256):
+                    if x != image_array.shape[0]-1 and maximum == math.ceil(image_array[x+1][y]/256):
                         for i in range(16, 16 - int(intensity), -1):
-                            for j in range(16):
-                                array_slice[(x - minx) * 16 + i][16 * y + j] = 1
+                            try:
+                                for j in range(16):
+                                    array_slice[(x - minx) * 16 + i][16 * y + j] = 1
+                            except:
+                                pass
                                 
                     
                     # Check left
-                    if y != 0 and maximum == round(image_array[x][y-1]/256):
+                    if y != 0 and maximum == math.ceil(image_array[x][y-1]/256):
                         for j in range(int(intensity)):
-                            for i in range(16):
-                                array_slice[(x - minx) * 16 + i][16 * y + j] = 1
+                            try:
+                                for i in range(16):
+                                    array_slice[(x - minx) * 16 + i][16 * y + j] = 1
+                            except:
+                                pass
 
                     # Check right
-                    if y != image_array.shape[1]-1 and maximum == round(image_array[x][y+1]/256):
+                    if y != image_array.shape[1]-1 and maximum == math.ceil(image_array[x][y+1]/256):
                         for j in range(16, 16 - int(intensity), -1):
-                            for i in range(16):
-                                array_slice[(x - minx) * 16 + i][16 * y + j] = 1
-                    print(array_slice)
+                            try:
+                                for i in range(16):
+                                    array_slice[(x - minx) * 16 + i][16 * y + j] = 1
+                            except:
+                                pass
 
-        except Exception as e:
-            print(e)
+        except Exception:
             pass
     
     return minx, array_slice
@@ -84,6 +95,8 @@ def process(minx):
 def write_codelines(x):
     big_array = np.load("UpscaledArray.npy")
     towrite = ""
+    x_divide = big_array.shape[0]/1000
+    y_divide = big_array.shape[1]/1000
     for y in range(big_array.shape[1]):
         if big_array[x][y] == 0:
             #Find line if applicable - along y axis
@@ -97,17 +110,21 @@ def write_codelines(x):
                         break
                 except:
                     break
-            towrite += f"finalLines.push([[{y}, {x}], [{maxy}, {x}]]);\n"
-            
+            towrite += f"finalLines.push([[{y/y_divide}, {x/x_divide}], [{maxy/y_divide}, {x/x_divide}]]);\n"
     return towrite
 
 global image_array, big_array
 
 
 if __name__ == "__main__":
-    
     #Load image
-    image = Image.open('image2.png').convert("L")
+    file_name = input("What image do you want to load(pathname)?: ").strip()
+    image = Image.open(file_name).convert("L")
+    with open("imagename", "w") as txt:
+        txt.write(file_name)
+    use_adaptive = input("What type of construction do you want (t for simple, f for adaptive)").strip().lower()[0]
+    with open("adaptive", "w") as txt:
+        txt.write(use_adaptive)
     image_array = np.array(image) 
     plt.imshow(image_array, cmap='gray')
     plt.axis('off')
@@ -115,14 +132,15 @@ if __name__ == "__main__":
 
     #Converting it to a bigger Numpy array
     big_array = np.zeros((0, image_array.shape[1] * 16))
-    with Pool() as p:
-        results = p.map(process, range(0, image_array.shape[0], 16))
-    for minx, array_slice in results:
+    with Pool(2) as p:
+        results = process_map(process, range(0, image_array.shape[0]), max_workers=16)
+        #results = list(tqdm.tqdm(p.imap(process, range(image_array.shape[0])), desc="Construct the image" ,total=image_array.shape[0]))
+    for minx, array_slice in tqdm.tqdm(results, desc="Adding together parts of the image"):
         big_array = np.append(big_array, array_slice, axis=0)
 
     #Rotate/flip the big array
     rotated_array = np.zeros(big_array.shape)
-    for i in range(rotated_array.shape[0]):
+    for i in tqdm.tqdm(range(rotated_array.shape[0]), desc="Transforming the image"):
         for j in range(rotated_array.shape[1]):
             rotated_array[i, rotated_array.shape[1]-1-j] = big_array[rotated_array.shape[0]-1-i, j]
     rotated_array = np.flip(rotated_array, axis=1)
@@ -135,10 +153,10 @@ if __name__ == "__main__":
     #Blot code generation
     with open("Blotcode.js", "w") as txt:
         txt.write("//Produced by Aditya Anand's Blotinator, not human-written\n")
-        txt.write(f"setDocDimensions({big_array.shape[0]}, {big_array.shape[1]});\n")
+        txt.write(f"setDocDimensions(1000, 1000);\n")
         txt.write("const finalLines = [];\n")
         with Pool() as p:
             results = p.map(write_codelines, range(big_array.shape[0]))
-        for i in results:
+        for i in tqdm.tqdm(results, "Compiling codelines"):
             txt.write(i)
         txt.write("drawLines(finalLines);")
