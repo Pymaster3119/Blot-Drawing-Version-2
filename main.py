@@ -32,7 +32,7 @@ def process(minx):
                                 new_y = 16 * y + j
                                 if 0 <= new_x < array_slice.shape[0] and 0 <= new_y < array_slice.shape[1]:
                                     array_slice[new_x][new_y] = 1
-                else:
+                elif minx == 0:
                     #Find the maximum value
                     maximum = 0
                     if x != 0 and maximum < round(image_array[x-1][y]/256):
@@ -43,31 +43,39 @@ def process(minx):
                         maximum = round(image_array[x][y-1]/256)
                     if y != image_array.shape[1]-1 and maximum < round(image_array[x][y+1]/256):
                         maximum = round(image_array[x][y+1]/256)
+                    print("Here")
                     # Check above
+                    print(image_array.size)
+                    print(big_array.size)
+                    print(round(image_array[x-1][y]/256))
                     if x != 0 and maximum == round(image_array[x-1][y]/256):
-                        for i in range(-16, -16 + int(intensity) * 2):
-                            for j in range(-16, 17):
+                        for i in range(-16, -16 + int(intensity)):
+                            for j in range(-16, 16):
                                 array_slice[(x - minx) * 16 + i][16 * y + j] = 1
-
+                    '''
                     # Check below
                     if x != image_array.shape[0]-1 and maximum == round(image_array[x+1][y]/256):
-                        for i in range(16, 16 - int(intensity) * 2, -1):
-                            for j in range(-16, 17):
+                        for i in range(15, 15 - int(intensity), -1):
+                            for j in range(-16, 16):
                                 array_slice[(x - minx) * 16 + i][16 * y + j] = 1
+                                
 
                     # Check left
                     if y != 0 and maximum == round(image_array[x][y-1]/256):
-                        for i in range(-16, -16 + int(intensity) * 2):
-                            for j in range(-16, 17):
+                        for j in range(16, 16 - int(intensity), -1):
+                            for i in range(-16, 16):
                                 array_slice[(x - minx) * 16 + i][16 * y + j] = 1
 
                     # Check right
                     if y != image_array.shape[1]-1 and maximum == round(image_array[x][y+1]/256):
-                        for j in range(16, 16 - int(intensity) * 2, -1):
-                            for i in range(-16, 17):
+                        for j in range(-16, -16 + int(intensity)):
+                            for i in range(-16, 16):
                                 array_slice[(x - minx) * 16 + i][16 * y + j] = 1
+                    print(array_slice)
+                    '''
         except Exception as e:
             print(e)
+            pass
     
     return minx, array_slice
 
@@ -98,7 +106,7 @@ if __name__ == "__main__":
     
     #Load image
     image = Image.open('image.png').convert("L")
-    image_array = np.array(image)
+    image_array = np.array(image) 
     plt.imshow(image_array, cmap='gray')
     plt.axis('off')
     plt.show()
