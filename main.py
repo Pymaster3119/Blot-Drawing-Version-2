@@ -8,7 +8,7 @@ from multiprocessing import Pool
 import time
 
 def process(minx):
-    useCircles = True
+    useCircles = False
     image = Image.open('image2.png').convert("L")
     image_array = np.array(image)
     maxx = minx + 16
@@ -32,7 +32,7 @@ def process(minx):
                                 new_y = 16 * y + j
                                 #if 0 <= new_x < array_slice.shape[0] and 0 <= new_y < array_slice.shape[1]:
                                 array_slice[new_x][new_y] = 1
-                elif x == 1:
+                else:
                     #Find the maximum value
                     maximum = 0
                     if x != 0 and maximum < round(image_array[x-1][y]/256):
@@ -49,32 +49,32 @@ def process(minx):
                     print(array_slice.shape)
                     print(round(image_array[x-1][y]/256))
                     if x != 0 and maximum == round(image_array[x-1][y]/256):
-                        for i in range(15, 15 - int(intensity), -1):
-                            for j in range(-16, 16):
-                                print("HERE")
-                                array_slice[(x - minx) * 16 + i][16 * y + j] = 1
-                                print("HERE 2")
-                    '''
+                        for i in range(int(intensity)):
+                            for j in range(16):
+                                new_x = (x - minx) * 16 + i
+                                new_y = 16 * y + j
+                                array_slice[new_x][new_y] = 1
+                    
                     # Check below
                     if x != image_array.shape[0]-1 and maximum == round(image_array[x+1][y]/256):
-                        for i in range(-16, -16 + int(intensity)):
-                            for j in range(-16, 16):
+                        for i in range(16, 16 - int(intensity), -1):
+                            for j in range(16):
                                 array_slice[(x - minx) * 16 + i][16 * y + j] = 1
                                 
-
+                    
                     # Check left
                     if y != 0 and maximum == round(image_array[x][y-1]/256):
-                        for j in range(16, 16 - int(intensity), -1):
-                            for i in range(-16, 16):
+                        for j in range(int(intensity)):
+                            for i in range(16):
                                 array_slice[(x - minx) * 16 + i][16 * y + j] = 1
 
                     # Check right
                     if y != image_array.shape[1]-1 and maximum == round(image_array[x][y+1]/256):
-                        for j in range(-16, -16 + int(intensity)):
-                            for i in range(-16, 16):
+                        for j in range(16, 16 - int(intensity), -1):
+                            for i in range(16):
                                 array_slice[(x - minx) * 16 + i][16 * y + j] = 1
                     print(array_slice)
-                    '''
+
         except Exception as e:
             print(e)
             pass
