@@ -8,6 +8,7 @@ from multiprocessing import Pool
 import time
 
 def process(minx):
+    useCircles = False
     image = Image.open('image.png').convert("L")
     image_array = np.array(image)
     maxx = minx + 16
@@ -21,17 +22,40 @@ def process(minx):
             for y in range(image_array.shape[1] + 1):
                 # Get intensity
                 intensity = image_array[x][y] / 16.0
-                radius = int(intensity)
-                # Draw circle with appropriate radius
-                for i in range(-radius, radius + 1):
-                    for j in range(-radius, radius + 1):
-                        if math.sqrt(i ** 2 + j ** 2) <= intensity:
-                            new_x = (x - minx) * 16 + i
-                            new_y = 16 * y + j
-                            if 0 <= new_x < array_slice.shape[0] and 0 <= new_y < array_slice.shape[1]:
-                                array_slice[new_x][new_y] = 1
-        except:
-            pass
+                if useCircles:
+                    radius = int(intensity)
+                    # Draw circle with appropriate radius
+                    for i in range(-radius, radius + 1):
+                        for j in range(-radius, radius + 1):
+                            if math.sqrt(i ** 2 + j ** 2) <= intensity:
+                                new_x = (x - minx) * 16 + i
+                                new_y = 16 * y + j
+                                if 0 <= new_x < array_slice.shape[0] and 0 <= new_y < array_slice.shape[1]:
+                                    array_slice[new_x][new_y] = 1
+                else:
+                    #Find the maximum value
+                    maximum = 0
+                    if x != 0 and maximum < round(image_array[x-1][y]/256):
+                        maximum = round(image_array[x-1][y]/256)
+                    if x != image_array.shape[0]-1 and maximum < round(image_array[x+1][y]/256):
+                        maximum = round(image_array[x+1][y]/256)
+                    if x != 0 and maximum < round(image_array[x][y-1]/256):
+                        maximum = round(image_array[x][y-1]/256)
+                    if x != image_array.shape[1]-1 and maximum < round(image_array[x][y+1]/256):
+                        maximum = round(image_array[x][y+1]/256)
+                    print(maximum)
+                    #Draw in from the sides
+                    if x != 0 and image_array[x-1][y] == maximum or True:
+                        print("Here")
+                        for i in range(16):
+                            for j in range(16):
+                                array_slice[(x-minx)*16+i][16 * y + j] = 1
+                    if x != image_array.shape[0]-1 and image_array[x+1][y] == maximum:
+                        for i in range(intensity):
+                            for j in range(16):
+                                array_slice[(x-minx)*16+16-i][16 * y + j] = 1
+        except Exception as e:
+            raise e
     
     return minx, array_slice
 
@@ -93,7 +117,6 @@ if __name__ == "__main__":
         txt.write("const finalLines = [];\n")
         with Pool() as p:
             results = p.map(write_codelines, range(big_array.shape[0]))
-
         for i in results:
             txt.write(i)
         txt.write("drawLines(finalLines);")
