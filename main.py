@@ -8,8 +8,8 @@ from multiprocessing import Pool
 import time
 
 def process(minx):
-    useCircles = False
-    image = Image.open('image.png').convert("L")
+    useCircles = True
+    image = Image.open('image2.png').convert("L")
     image_array = np.array(image)
     maxx = minx + 16
     if maxx < image_array.shape[0]:
@@ -25,14 +25,14 @@ def process(minx):
                 if useCircles:
                     radius = int(intensity)
                     # Draw circle with appropriate radius
-                    for i in range(-radius, radius + 1):
-                        for j in range(-radius, radius + 1):
-                            if math.sqrt(i ** 2 + j ** 2) <= intensity:
+                    for i in range(16):
+                        for j in range(16):
+                           if (i - 8) ** 2 + (j - 8) ** 2 <= radius ** 2:
                                 new_x = (x - minx) * 16 + i
                                 new_y = 16 * y + j
-                                if 0 <= new_x < array_slice.shape[0] and 0 <= new_y < array_slice.shape[1]:
-                                    array_slice[new_x][new_y] = 1
-                elif minx == 0:
+                                #if 0 <= new_x < array_slice.shape[0] and 0 <= new_y < array_slice.shape[1]:
+                                array_slice[new_x][new_y] = 1
+                elif x == 1:
                     #Find the maximum value
                     maximum = 0
                     if x != 0 and maximum < round(image_array[x-1][y]/256):
@@ -45,17 +45,19 @@ def process(minx):
                         maximum = round(image_array[x][y+1]/256)
                     print("Here")
                     # Check above
-                    print(image_array.size)
-                    print(big_array.size)
+                    print(image_array)
+                    print(array_slice.shape)
                     print(round(image_array[x-1][y]/256))
                     if x != 0 and maximum == round(image_array[x-1][y]/256):
-                        for i in range(-16, -16 + int(intensity)):
+                        for i in range(15, 15 - int(intensity), -1):
                             for j in range(-16, 16):
+                                print("HERE")
                                 array_slice[(x - minx) * 16 + i][16 * y + j] = 1
+                                print("HERE 2")
                     '''
                     # Check below
                     if x != image_array.shape[0]-1 and maximum == round(image_array[x+1][y]/256):
-                        for i in range(15, 15 - int(intensity), -1):
+                        for i in range(-16, -16 + int(intensity)):
                             for j in range(-16, 16):
                                 array_slice[(x - minx) * 16 + i][16 * y + j] = 1
                                 
@@ -105,7 +107,7 @@ global image_array, big_array
 if __name__ == "__main__":
     
     #Load image
-    image = Image.open('image.png').convert("L")
+    image = Image.open('image2.png').convert("L")
     image_array = np.array(image) 
     plt.imshow(image_array, cmap='gray')
     plt.axis('off')
@@ -118,12 +120,12 @@ if __name__ == "__main__":
     for minx, array_slice in results:
         big_array = np.append(big_array, array_slice, axis=0)
 
-    #Rotate the big array
+    #Rotate/flip the big array
     rotated_array = np.zeros(big_array.shape)
     for i in range(rotated_array.shape[0]):
         for j in range(rotated_array.shape[1]):
             rotated_array[i, rotated_array.shape[1]-1-j] = big_array[rotated_array.shape[0]-1-i, j]
-
+    rotated_array = np.flip(rotated_array, axis=1)
     #Save and display the big array
     np.save("UpscaledArray", rotated_array)
     plt.imshow(rotated_array, cmap='gray')
