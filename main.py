@@ -132,9 +132,8 @@ if __name__ == "__main__":
 
     #Converting it to a bigger Numpy array
     big_array = np.zeros((0, image_array.shape[1] * 16))
-    with Pool(2) as p:
-        results = process_map(process, range(0, image_array.shape[0]), max_workers=16)
-        #results = list(tqdm.tqdm(p.imap(process, range(image_array.shape[0])), desc="Construct the image" ,total=image_array.shape[0]))
+    with Pool(16) as p:
+        results = p.map(process, range(0, image_array.shape[0], 16))
     for minx, array_slice in tqdm.tqdm(results, desc="Adding together parts of the image"):
         big_array = np.append(big_array, array_slice, axis=0)
 
@@ -151,7 +150,11 @@ if __name__ == "__main__":
     plt.show()
 
     #Blot code generation
-    with open("Blotcode.js", "w") as txt:
+    with open("index.js", "w") as txt:
+        title = input("What do you want to title the thing?: ")
+        author = input("What is your name?: ")
+        print("Save your snapshot in snapshot.png")
+        txt.write(f"/*\n@title: {title}\n@author: {author}\n@snapshot: snapshot.png\n*/\n")
         txt.write("//Produced by Aditya Anand's Blotinator, not human-written\n")
         txt.write(f"setDocDimensions(1000, 1000);\n")
         txt.write("const finalLines = [];\n")
