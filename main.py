@@ -95,7 +95,8 @@ def process(minx):
 def write_codelines(x):
     big_array = np.load("UpscaledArray.npy")
     towrite = ""
-    x_divide = big_array.shape[0]/1000
+    height = 1000 * (big_array.shape[0]/ big_array.shape[1])
+    x_divide = big_array.shape[0]/height
     y_divide = big_array.shape[1]/1000
     for y in range(big_array.shape[1]):
         if big_array[x][y] == 0:
@@ -153,10 +154,11 @@ if __name__ == "__main__":
     with open("index.js", "w") as txt:
         title = input("What do you want to title the thing?: ")
         author = input("What is your name?: ")
-        print("Save your snapshot in snapshot.png")
-        txt.write(f"/*\n@title: {title}\n@author: {author}\n@snapshot: snapshot.png\n*/\n")
+        print(f"Save your snapshot in snapshots/snapshot.png")
+        txt.write(f"/*\n@title: {title}\n@author: {author}\n@snapshot: snapshots/snapshot.png\n*/\n")
         txt.write("//Produced by Aditya Anand's Blotinator, not human-written\n")
-        txt.write(f"setDocDimensions(1000, 1000);\n")
+        height = 1000 * (big_array.shape[0]/ big_array.shape[1])
+        txt.write(f"setDocDimensions(1000, {height});\n")
         txt.write("const finalLines = [];\n")
         with Pool() as p:
             results = p.map(write_codelines, range(big_array.shape[0]))
